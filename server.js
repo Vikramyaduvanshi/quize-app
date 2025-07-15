@@ -22,9 +22,12 @@ app.use("/questions", questionrouter)
 
 
 
-app.listen(PORT,()=>{
-    ConnectDb()
-    console.log("server started")
-})
+const server = app.listen(PORT, "0.0.0.0", () => {
+    ConnectDb();
+    console.log(`✅ Server started on PORT ${PORT}`);
+});
+
+server.keepAliveTimeout = 120000;
+server.headersTimeout = 120000;
 
 
