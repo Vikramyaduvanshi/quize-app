@@ -14,8 +14,8 @@ let tpoicrouter = express.Router();
 userRouter.post("/signup", async (req, res) => {
   let { email, password,role } = req.body;
   let myPlaintextPassword = password;
-
-
+let exituser= await  Usermodel.findOne({email})
+if(exituser) return res.status(400).json({ message: 'User already registered with this email.' });
   
   const saltRounds = 10;
 
