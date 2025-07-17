@@ -9,7 +9,7 @@ const UserSchema = new mongoose.Schema({
 });
 
 
-let Usermodel= mongoose.model("User",Userschema)
+let Usermodel= mongoose.model("User",UserSchema)
 
 
 let Topicschema= new mongoose.Schema({
