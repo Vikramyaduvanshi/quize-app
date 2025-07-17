@@ -2,11 +2,11 @@ let mongoose=require("mongoose");
 
 
 
-let Userschema= new mongoose.Schema({
-email:{type:String, required:true},
-password:{type:String, required:true},
-role:{type:String,enum:["admin","user"],default:"user"}
-})
+const UserSchema = new mongoose.Schema({
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  role: { type: String, enum: ['admin', 'user'], default: 'user' }
+});
 
 
 let Usermodel= mongoose.model("User",Userschema)
