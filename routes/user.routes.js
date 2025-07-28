@@ -5,7 +5,7 @@ let mongoose= require("mongoose")
 var jwt = require('jsonwebtoken');
 let { Usermodel, Topics, Questions, Quizs } = require("../models/models.js");
 const quizmiddle = require("../middleware/middleware.js");
-
+let nodemail= require("nodemailer")
 let quizrouter = express.Router();
 let questionrouter = express.Router();
 let tpoicrouter = express.Router();
@@ -25,8 +25,9 @@ if(exituser) return res.status(400).json({ message: 'User already registered wit
       return res.status(500).json({ message: "Hashing failed", error: err.message });
     } else {
       let newuser = new Usermodel({ email, password: hash,role});
+      console.log(newuser)
       await newuser.save();
-      res.json({ message: "success" });
+      res.json({ message: "success" ,user:newuser});
     }
   });
 });
@@ -39,7 +40,7 @@ userRouter.post("/login", async (req, res) => {
     let user = await Usermodel.findOne({email});
 
     if (!user) {
-      return res.json({ message: "user not found" });
+      return res.json({ message: "user not found" }); 
     } else {
       let hash = user.password;
 
@@ -269,6 +270,87 @@ quizrouter.get("/userqize", quizmiddle("user", "admin"), async (req, res) => {
     res.status(500).json({ success: false, message: e.message });
   }
 });
+
+let transporter = nodemail.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.USER,
+    pass: process.env.PASSWORD,
+  },
+});
+
+userRouter.post("/forgot_password", async(req, res)=>{
+try{
+  let {email}= req.body;
+  
+let user= await Usermodel.findOne({email})
+if(!user){
+return  res.json({success:false, message:"user not found"})
+}
+
+let resetpasswordtoken= jwt.sign({userId:user._id, role:user.role},'shhhhh',{expiresIn:300})
+let resetpasswordlink= `https://quize-frontend.vercel.app/reset_password?token=${resetpasswordtoken}`
+const info = await transporter.sendMail({
+      from: `Vikram Yadav <${process.env.USER}>`,
+      to: email,
+      subject: `Password reset link for quize`,
+     html: `
+  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #f9f9f9;">
+    <h2 style="color: #2e6ddf;">🔐 Password Reset Request</h2>
+    <p>Hi there,</p>
+    <p>You recently requested to reset your password for your Quiz Master account.</p>
+    <p><strong>This link is valid for the next 5 minutes</strong>. After that, it will expire for security reasons.</p>
+    
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${resetpasswordlink}" style="display: inline-block; padding: 12px 24px; background-color: #2e6ddf; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">Reset Your Password</a>
+    </div>
+
+    <p>If you did not request this, you can safely ignore this email.</p>
+    <p style="color: #555;">Thanks & regards,<br/><strong>Quiz Master Team</strong></p>
+  </div>
+`,
+    });
+
+res.status(200).json({success:true, message:"reset password link has been send to you email"})
+}
+catch(e){
+  res.json({success:false, message:e.message, m:"jgsdkgfkdsfi"})
+}
+
+})
+
+
+
+
+userRouter.post("/reset-password", async (req,res)=>{
+try{
+  let {newpassword}= req.body
+let {token}=req.query;
+let decoded= jwt.verify(token, "shhhhh");
+if(decoded){
+  let user= await Usermodel.findById(decoded.userId)
+let myPlaintextPassword=newpassword
+  bcrypt.hash(myPlaintextPassword, salt,async function(err, hash) {
+        // Store hash in your password DB.
+
+if(err){
+  res.json({success:false, message:err})
+}else{
+  user.password=hash
+  await user.save()
+  res.json({success:true, message:"you password has updated"})
+}
+    });
+}
+}catch(e){
+  if(e.message=="jwt expired"){
+    res.json({success:false, message:"link has expired , password did not changed"})
+  }
+  else{
+    res.json({success:false, message:e.message})
+  }
+}
+})
 
 
 
