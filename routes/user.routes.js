@@ -314,7 +314,7 @@ const info = await transporter.sendMail({
 res.status(200).json({success:true, message:"reset password link has been send to you email"})
 }
 catch(e){
-  res.json({success:false, message:e.message, m:"jgsdkgfkdsfi"})
+  res.json({success:false, message:e.message})
 }
 
 })
@@ -328,10 +328,11 @@ try{
 let {token}=req.query;
 let decoded= jwt.verify(token, "shhhhh");
 if(decoded){
+  let salt=10
   let user= await Usermodel.findById(decoded.userId)
 let myPlaintextPassword=newpassword
   bcrypt.hash(myPlaintextPassword, salt,async function(err, hash) {
-        // Store hash in your password DB.
+        
 
 if(err){
   res.json({success:false, message:err})
